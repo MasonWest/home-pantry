@@ -98,3 +98,104 @@ export async function updateItem(id, updates) {
   }
   return { data: data?.[0] || null, error: null }
 }
+
+// ===== 自定义存放位置 =====
+
+const LOCATIONS_TABLE = 'custom_locations'
+
+/**
+ * 获取所有自定义位置
+ */
+export async function fetchLocations() {
+  if (!supabase) return []
+  
+  const { data, error } = await supabase
+    .from(LOCATIONS_TABLE)
+    .select('*')
+    .order('name', { ascending: true })
+  
+  if (error) {
+    console.error('获取位置失败:', error)
+    return []
+  }
+  return data || []
+}
+
+/**
+ * 添加自定义位置
+ * @param {string} name - 位置名称
+ */
+export async function addLocation(name) {
+  if (!supabase) return { data: null, error: 'Supabase 未配置' }
+  
+  const { data, error } = await supabase
+    .from(LOCATIONS_TABLE)
+    .insert([{ name }])
+    .select()
+  
+  if (error) {
+    console.error('添加位置失败:', error)
+    return { data: null, error }
+  }
+  return { data: data?.[0] || null, error: null }
+}
+
+/**
+ * 删除自定义位置
+ * @param {number} id - 位置ID
+ */
+export async function deleteLocation(id) {
+  if (!supabase) return { error: 'Supabase 未配置' }
+  
+  const { error } = await supabase
+    .from(LOCATIONS_TABLE)
+    .delete()
+    .eq('id', id)
+  
+  if (error) {
+    console.error('删除位置失败:', error)
+    return { error }
+  }
+  return { error: null }
+}
+
+/**
+ * 更新位置名称
+ * @param {number} id - 位置ID
+ * @param {string} name - 新名称
+ */
+export async function updateLocation(id, name) {
+  if (!supabase) return { error: 'Supabase 未配置' }
+  
+  const { data, error } = await supabase
+    .from(LOCATIONS_TABLE)
+    .update({ name })
+    .eq('id', id)
+    .select()
+  
+  if (error) {
+    console.error('更新位置失败:', error)
+    return { data: null, error }
+  }
+  return { data: data?.[0] || null, error: null }
+}
+
+/**
+ * 检查位置是否被使用
+ * @param {string} locationName - 位置名称
+ * @returns {number} 使用数量
+ */
+export async function checkLocationUsage(locationName) {
+  if (!supabase) return 0
+  
+  const { count, error } = await supabase
+    .from(TABLE_NAME)
+    .select('*', { count: 'exact', head: true })
+    .eq('location', locationName)
+  
+  if (error) {
+    console.error('检查位置使用失败:', error)
+    return 0
+  }
+  return count || 0
+}

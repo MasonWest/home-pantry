@@ -1,25 +1,47 @@
 <template>
-  <div class="item-card" :class="statusClass">
-    <div class="card-header">
-      <span class="item-name">{{ item.name }}</span>
-      <span class="item-quantity">×{{ item.quantity }}</span>
-    </div>
-    
-    <div class="card-body">
-      <div class="item-location">
-        <span class="location-icon">{{ locationIcon }}</span>
-        {{ item.location }}
+  <div class="item-card" :class="[statusClass, viewMode]">
+    <!-- 列表视图 -->
+    <template v-if="viewMode === 'list'">
+      <div class="card-header">
+        <span class="item-name">{{ item.name }}</span>
+        <span class="item-quantity">×{{ item.quantity }}</span>
       </div>
-      <div class="item-expiry">
-        {{ expiryText }}
+      
+      <div class="card-body">
+        <div class="item-location">
+          <span class="location-icon">{{ locationIcon }}</span>
+          {{ item.location }}
+        </div>
+        <div class="item-expiry">
+          {{ expiryText }}
+        </div>
       </div>
-    </div>
+      
+      <div class="card-footer">
+        <button class="delete-btn" @click="handleDelete">
+          ✓ 已吃完
+        </button>
+      </div>
+    </template>
     
-    <div class="card-footer">
-      <button class="delete-btn" @click="$emit('delete', item.id)">
-        ✓ 已吃完
-      </button>
-    </div>
+    <!-- 网格视图 -->
+    <template v-else>
+      <div class="grid-content">
+        <div class="grid-status-bar" :class="statusClass"></div>
+        <div class="grid-name">{{ item.name }}</div>
+        <div class="grid-quantity">×{{ item.quantity }}</div>
+        <div class="grid-location">
+          <span>{{ locationIcon }}</span>
+          <span>{{ item.location }}</span>
+        </div>
+        <div class="grid-expiry" :class="statusClass">
+          {{ expiryText }}
+        </div>
+        <button class="grid-delete-btn" @click="handleDelete">
+          ✓ 吃完
+        </button>
+      </div>
+    </template>
   </div>
 </template>
 
@@ -31,19 +53,34 @@ const props = defineProps({
   item: {
     type: Object,
     required: true
+  },
+  viewMode: {
+    type: String,
+    default: 'list'
   }
 })
 
-defineEmits(['delete'])
+const emit = defineEmits(['delete'])
 
-const locationMap = {
-  '冰箱': '🧊',
-  '冷冻': '❄️',
-  '橱柜': '🗄️',
-  '储藏室': '📦'
+function handleDelete() {
+  if (confirm(`确定要将 "${props.item.name}" 标记为已吃完吗？`)) {
+    emit('delete', props.item.id)
+  }
 }
 
-const locationIcon = computed(() => locationMap[props.item.location] || '📦')
+const defaultLocationMap = {
+  '冷藏': '❄',
+  '冷冻': '🧊'
+}
+
+const locationIcon = computed(() => {
+  // 默认位置使用原有图标
+  if (defaultLocationMap[props.item.location]) {
+    return defaultLocationMap[props.item.location]
+  }
+  // 自定义位置使用通用图标
+  return '📍'
+})
 
 const statusClass = computed(() => {
   return `status-${getItemStatus(props.item.expiry_date)}`
@@ -161,6 +198,102 @@ const expiryText = computed(() => {
 }
 
 .delete-btn:hover {
+  background: #7EC8A3;
+  color: #fff;
+}
+
+/* ========== 网格视图样式 ========== */
+.item-card.grid {
+  border-left: none;
+  border-radius: 12px;
+  padding: 0;
+  overflow: hidden;
+}
+
+.grid-status-bar {
+  height: 4px;
+  background: #7EC8A3;
+}
+
+.grid-status-bar.status-normal {
+  background: #7EC8A3;
+}
+
+.grid-status-bar.status-warning {
+  background: #F5B041;
+}
+
+.grid-status-bar.status-expired {
+  background: #E74C3C;
+}
+
+.grid-content {
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.grid-name {
+  font-size: 15px;
+  font-weight: 600;
+  color: #2d3a2d;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.grid-quantity {
+  font-size: 13px;
+  color: #7a8a7a;
+}
+
+.grid-location {
+  font-size: 12px;
+  color: #5a6a5a;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.grid-expiry {
+  font-size: 11px;
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-weight: 500;
+  display: inline-block;
+  width: fit-content;
+}
+
+.grid-expiry.status-normal {
+  color: #7EC8A3;
+  background: rgba(126, 200, 163, 0.12);
+}
+
+.grid-expiry.status-warning {
+  color: #D68910;
+  background: rgba(245, 176, 65, 0.15);
+}
+
+.grid-expiry.status-expired {
+  color: #E74C3C;
+  background: rgba(231, 76, 60, 0.12);
+}
+
+.grid-delete-btn {
+  width: 100%;
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  background: #f5f5f5;
+  color: #7a8a7a;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  margin-top: 4px;
+}
+
+.grid-delete-btn:hover {
   background: #7EC8A3;
   color: #fff;
 }

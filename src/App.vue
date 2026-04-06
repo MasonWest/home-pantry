@@ -6,8 +6,19 @@
     </header>
     
     <main class="app-main">
-      <ItemForm @add="handleAdd" />
-      <ItemList :items="items" :loading="loading" @delete="handleDelete" />
+      <ItemForm 
+        :locationOptions="formLocationOptions" 
+        @add="handleAdd" 
+        @manage-locations="handleManageLocations"
+      />
+      <ItemList 
+        :items="items" 
+        :loading="loading" 
+        :viewMode="viewMode"
+        :locationOptions="filterLocationOptions"
+        @delete="handleDelete"
+        @change-view="viewMode = $event"
+      />
     </main>
     
     <div v-if="!isSupabaseConfigured" class="config-warning">
@@ -17,24 +28,65 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted, provide } from 'vue'
 import ItemForm from './components/ItemForm.vue'
 import ItemList from './components/ItemList.vue'
 import { 
   fetchItems, 
   addItem, 
   deleteItem, 
-  isConfigured 
+  isConfigured,
+  fetchLocations,
+  addLocation,
+  updateLocation,
+  deleteLocation,
+  checkLocationUsage
 } from './utils/supabase.js'
 
 const items = ref([])
+const customLocations = ref([])
 const loading = ref(true)
 const isSupabaseConfigured = ref(isConfigured())
+const viewMode = ref('list') // 'list' 或 'grid'
+
+// 系统默认位置（只保留冷藏和冷冻）
+const defaultLocations = [
+  { value: '冷藏', label: '❄ 冷藏' },
+  { value: '冷冻', label: '🧊 冷冻' }
+]
+
+// 筛选器位置选项（含"全部"）
+const filterLocationOptions = computed(() => {
+  const customOpts = customLocations.value.map(loc => ({
+    value: loc.name,
+    label: loc.name,
+    id: loc.id
+  }))
+  return [
+    { value: '全部', label: '全部' },
+    ...defaultLocations,
+    ...customOpts
+  ]
+})
+
+// 添加表单位置选项（不含"全部"）
+const formLocationOptions = computed(() => {
+  const customOpts = customLocations.value.map(loc => ({
+    value: loc.name,
+    label: loc.name,
+    id: loc.id
+  }))
+  return [...defaultLocations, ...customOpts]
+})
 
 async function loadItems() {
   loading.value = true
   items.value = await fetchItems()
   loading.value = false
+}
+
+async function loadLocations() {
+  customLocations.value = await fetchLocations()
 }
 
 async function handleAdd(itemData) {
@@ -45,15 +97,64 @@ async function handleAdd(itemData) {
 }
 
 async function handleDelete(id) {
+  // 确认删除操作，从数据库彻底删除
   const { error } = await deleteItem(id)
   if (!error) {
     await loadItems()
   }
 }
 
-onMounted(() => {
-  loadItems()
+// 位置管理：添加新位置
+async function handleAddLocation(name) {
+  const { error } = await addLocation(name)
+  if (!error) {
+    await loadLocations()
+  }
+}
+
+// 位置管理：更新位置名称
+async function handleUpdateLocation(id, name) {
+  const { error } = await updateLocation(id, name)
+  if (!error) {
+    await loadLocations()
+    // 同时更新物品表中的位置名称
+    await loadItems()
+  }
+}
+
+// 位置管理：删除位置（检查是否有食材）
+async function handleDeleteLocation(id, name) {
+  // 检查使用情况
+  const usage = await checkLocationUsage(name)
+  if (usage > 0) {
+    alert(`该位置下还有 ${usage} 件食材，无法删除`)
+    return
+  }
+  
+  // 执行删除
+  try {
+    const { error } = await deleteLocation(id)
+    if (error) {
+      alert('删除失败: ' + error.message)
+      return
+    }
+    await loadLocations()
+  } catch (e) {
+    alert('删除出错: ' + e.message)
+  }
+}
+
+// 暴露位置管理相关方法给子组件
+provide('locationMethods', {
+  add: handleAddLocation,
+  update: handleUpdateLocation,
+  delete: handleDeleteLocation,
+  checkUsage: checkLocationUsage
 })
+
+// 初始化加载数据
+loadItems()
+loadLocations()
 </script>
 
 <style scoped>
