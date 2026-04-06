@@ -1,0 +1,103 @@
+/* 全局重置与基础样式 */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+    'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  line-height: 1.5;
+  color: #2d3a2d;
+  background: #f8fcf8;
+  min-height: 100vh;
+}
+
+/* 移动端优化 */
+@media (max-width: 480px) {
+  html {
+    font-size: 14px;
+  }
+}
+
+/* 去除输入框默认样式 */
+input,
+button,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* 按钮样式重置 */
+button {
+  border: none;
+  background: none;
+  cursor: pointer;
+  outline: none;
+}
+
+/* 链接样式重置 */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* 列表样式重置 */
+ul,
+ol {
+  list-style: none;
+}
+
+/* 图片样式重置 */
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}
+
+/* 滚动条样式 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f0f5f0;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #c0d0c0;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #a0b0a0;
+}
+
+/* 选中文字样式 */
+::selection {
+  background: rgba(126, 200, 163, 0.3);
+  color: #2d5a3d;
+}
+
+/* 聚焦样式 */
+:focus-visible {
+  outline: 2px solid #7EC8A3;
+  outline-offset: 2px;
+}
+
+/* 日期输入框日历图标颜色 */
+input[type="date"]::-webkit-calendar-picker-indicator {
+  filter: invert(45%) sepia(20%) saturate(200%) hue-rotate(100deg);
+  cursor: pointer;
+}
